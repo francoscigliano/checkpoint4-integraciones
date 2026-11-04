@@ -1,0 +1,632 @@
+{
+  "name": "Checkpoint 4 - Integraciones (HubSpot, Gmail, Slack)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "subject:SOPORTE"
+        }
+      },
+      "id": "54b4ce46-2e02-47c9-b7f4-d74f305404b3",
+      "name": "Gmail Trigger · Correo entrante",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        208
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GkpIxvYYuN3lXTsB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "k0",
+              "leftValue": "={{ $json.Subject || '' }}",
+              "rightValue": "auto-reply",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "k1",
+              "leftValue": "={{ $json.Subject || '' }}",
+              "rightValue": "out of office",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "k2",
+              "leftValue": "={{ $json.Subject || '' }}",
+              "rightValue": "undeliverable",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "k3",
+              "leftValue": "={{ $json.Subject || '' }}",
+              "rightValue": "automatic reply",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "k4",
+              "leftValue": "={{ $json.Subject || '' }}",
+              "rightValue": "respuesta automática",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "k10",
+              "leftValue": "={{ $json.From || '' }}",
+              "rightValue": "no-reply@",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "k11",
+              "leftValue": "={{ $json.From || '' }}",
+              "rightValue": "noreply@",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "k12",
+              "leftValue": "={{ $json.From || '' }}",
+              "rightValue": "mailer-daemon",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "49bb6b40-1d1d-4b76-8892-0f4204499bb8",
+      "name": "IF · ¿Es auto-reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "577baf6d-a205-4bf3-87f9-0abe0f6cff15",
+      "name": "Stop · Auto-reply ignorado (corta el bucle)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        528,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "email",
+              "value": "={{ (($json.From || '').match(/<(.+?)>/)?.[1] || ($json.From || '')).toLowerCase().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "f1",
+              "name": "nombre",
+              "value": "={{ ($json.From || '').split('<')[0].replace(/\"/g,'').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "asunto",
+              "value": "={{ $json.Subject || '(sin asunto)' }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "cuerpo",
+              "value": "={{ ($json.text || $json.snippet || '').slice(0, 2000) }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "threadId",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "94e753d7-edfd-4090-ab33-8cabc8478ed9",
+      "name": "Set · Limpiar payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        528,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "@",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "73c8b8bf-e648-41a4-8dcd-86fdb4386748",
+      "name": "IF · ¿Email válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        784,
+        240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "49068204-df3d-493b-9c63-01b551a0c05b",
+      "name": "Stop · Email inválido (evita 400)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Asunto: {{ $json.asunto }}\nCliente: {{ $json.nombre }}\nMensaje:\n{{ $json.cuerpo }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Sos el asistente de soporte de Geacom, una distribuidora de vinos. Redactá un borrador de respuesta breve, cordial y profesional, en español rioplatense, con lenguaje neutro y sin giros inclusivos, al correo del cliente. No inventes precios, stock, fechas ni compromisos. Si falta información, pedila amablemente. Firmá como: Equipo de Geacom. Devolvé solo el texto del correo."
+            }
+          ]
+        }
+      },
+      "id": "320677c8-4994-445c-8774-894d7d9e65cb",
+      "name": "IA · Redactar borrador",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "3c39f30e-1a6f-48c6-ad60-c0d56d7438eb",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        432
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "gJotaZYqU6keCIPj",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "search",
+        "limit": 1,
+        "filterGroupsUi": {
+          "filterGroupsValues": [
+            {
+              "filtersUi": {
+                "filterValues": [
+                  {
+                    "propertyName": "email|string",
+                    "value": "={{ $('Set · Limpiar payload').item.json.email }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "ed7087ee-d9d0-40b8-ad20-b0670c6a6adf",
+      "name": "HubSpot · Look up contacto por email",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "3MB0ufdDsZ5fsf9J",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "619f65d7-4c45-4572-ac50-9926de235af7",
+      "name": "IF · ¿Existe en el CRM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $('Set · Limpiar payload').item.json.email }}",
+        "additionalFields": {
+          "firstName": "={{ $('Set · Limpiar payload').item.json.nombre }}"
+        },
+        "options": {}
+      },
+      "id": "c9f963e3-0e65-4980-a89f-e0f876618bc5",
+      "name": "HubSpot · Crear contacto",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        272
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "3MB0ufdDsZ5fsf9J",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "80eba7d5-efd4-4dfa-8b81-8158f53edd7e",
+      "name": "Contacto listo",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ 'Re: ' + $('Set · Limpiar payload').item.json.asunto }}",
+        "message": "={{ $('IA · Redactar borrador').item.json.text }}",
+        "options": {
+          "threadId": "={{ $('Set · Limpiar payload').item.json.threadId }}",
+          "sendTo": "={{ $('Set · Limpiar payload').item.json.email }}"
+        }
+      },
+      "id": "8153ba09-19da-4d8a-ac82-bdbd2dd0af17",
+      "name": "Gmail · Create Draft (aprobación humana)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2352,
+        208
+      ],
+      "webhookId": "3f18ad06-5dd9-4acc-a988-990fd82589a8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GkpIxvYYuN3lXTsB",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0",
+              "name": "texto",
+              "value": "={{ ':memo: Borrador listo para aprobar en Gmail\\nDe: ' + $('Set · Limpiar payload').item.json.nombre + ' <' + $('Set · Limpiar payload').item.json.email + '>' + '\\nAsunto: ' + $('Set · Limpiar payload').item.json.asunto }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "212b296a-3f60-408b-bf66-6a6d02754bdf",
+      "name": "Set · Limpiar payload para Slack",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2608,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CF3Q6N7JQ",
+          "mode": "list",
+          "cachedResultName": "operaciones"
+        },
+        "text": "={{ $json.texto }}",
+        "otherOptions": {}
+      },
+      "id": "4f611bd2-878e-4c46-b87e-d595c3c943b8",
+      "name": "Slack · Avisar al equipo",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2864,
+        208
+      ],
+      "webhookId": "e1000000-0000-4000-8000-0000000000bb",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "UZdGUuoLEwGmJkef",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger · Correo entrante": {
+      "main": [
+        [
+          {
+            "node": "IF · ¿Es auto-reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF · ¿Es auto-reply?": {
+      "main": [
+        [
+          {
+            "node": "Stop · Auto-reply ignorado (corta el bucle)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set · Limpiar payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set · Limpiar payload": {
+      "main": [
+        [
+          {
+            "node": "IF · ¿Email válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF · ¿Email válido?": {
+      "main": [
+        [
+          {
+            "node": "IA · Redactar borrador",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop · Email inválido (evita 400)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "IA · Redactar borrador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA · Redactar borrador": {
+      "main": [
+        [
+          {
+            "node": "HubSpot · Look up contacto por email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot · Look up contacto por email": {
+      "main": [
+        [
+          {
+            "node": "IF · ¿Existe en el CRM?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF · ¿Existe en el CRM?": {
+      "main": [
+        [
+          {
+            "node": "Contacto listo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HubSpot · Crear contacto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot · Crear contacto": {
+      "main": [
+        [
+          {
+            "node": "Contacto listo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contacto listo": {
+      "main": [
+        [
+          {
+            "node": "Gmail · Create Draft (aprobación humana)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail · Create Draft (aprobación humana)": {
+      "main": [
+        [
+          {
+            "node": "Set · Limpiar payload para Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set · Limpiar payload para Slack": {
+      "main": [
+        [
+          {
+            "node": "Slack · Avisar al equipo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8e8194e1-7f26-46e4-a44e-dbe1dd577122",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3b552268f290b19371a56571e52a3aadc2326cbc2894b7bd0e8021c52b69a2e4"
+  },
+  "nodeGroups": [],
+  "id": "mjzwXXmjex0YitGg",
+  "tags": []
+}
